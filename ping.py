@@ -7,6 +7,8 @@ import time
 import signal
 import threading
 from time import sleep, strftime
+import os
+from structs import IPTracking, SummaryData, MessageQueue
 
 default_timer = time.time
 
@@ -26,21 +28,19 @@ class Runner(threading.Thread):
     def run(self):
         global run_loop
         while run_loop:
-            msg = ("[%s] ICMP REQUEST TO %s\t icmp_seq=%d\t" % (strftime("%m.%d %H:%M:%S"), self.dest_addr, self.seq))
+            data = IPTracking(self.dest_addr, self.seq, default_timer())
             try:
                 delay = self.do_one()
                 if delay is None:
-                    msg += ("failed. (timeout within %ssec.)" % self.timeout)
+                    data.set_timeout()
                 elif delay > 0:
                     delay *= 1000
-                    msg += ("time=%0.4f ms" % delay)
-                else:
-                    msg += "(socket error: No route to host)"
+                    data.set_delay(delay)
             except socket.error as e:
-                msg += ("failed. (socket error: '%s')" % e[1])
+                data.set_error(e[0], e[1])
 
-            self.msg_queue.push(msg)
-            self.seq = (self.seq+1) & 0xFFFF
+            self.msg_queue.push(data)
+            self.seq = (self.seq + 1) & 0xFFFF
             sleep(1)
 
     def receive_one_ping(self, my_socket, seq_id):
@@ -143,38 +143,59 @@ class Runner(threading.Thread):
         return answer
 
 
-class MessageQueue:
-    def __init__(self):
-        self.queue = []
+def p_helper(value, length=9):
+    l = "%.4f" % value
+    return " " * (length - len(l)) + l
 
-    def push(self, message):
-        self.queue.append(message)
 
-    def pop(self):
-        ret = None
-        if self.len > 0:
-            ret = self.queue.pop(0)
-        return ret
+def p_helper1(curr, max, avg, size=20):
+    if max < 0.1:
+        point = 0
+    else:
+        point = int(curr / max * size)
+    if point > size:
+        point = size
 
-    @property
-    def len(self):
-        return len(self.queue)
+    return u"[%s%s| %s ms AVG: %s ms MAX: %s ms]" % (
+        '#' * point, '.' * (size - point), p_helper(curr), p_helper(avg), p_helper(max))
 
 
 class Printing(threading.Thread):
-    def __init__(self, msg_queue):
+    def __init__(self, msg_queue, valid_ips):
         threading.Thread.__init__(self)
         self.msg_queue = msg_queue
+        self.data = {}
+        self.start_from = default_timer()
+        for ip in valid_ips:
+            self.data[ip] = SummaryData()
 
     def run(self):
         global run_loop
         loop = True
         while loop:
             sleep(1)
-            while self.msg_queue.len>0:
+            while self.msg_queue.len > 0:
                 item = self.msg_queue.pop()
-                if item is not None:
-                    print item
+                if item is not None and isinstance(item, IPTracking):
+                    self.data[item.ip].update(item)
+                del item
+
+            os.system("clear")
+            delta = default_timer() - self.start_from
+            d_hours = int(delta / 3600)
+            delta -= d_hours * 3600
+            d_mins = int(delta / 60)
+            delta -= d_mins * 60
+
+            print "Current time: %s\t\tRunning from: %s\t\tRunning time: %02d:%02d:%02d" % (
+                strftime("%m-%d %H:%M:%S"), strftime("%m-%d %H:%M:%S", time.gmtime(self.start_from)),
+                d_hours, d_mins, delta
+            )
+            for ip, info in self.data.iteritems():
+                print "[%s]\tDELAY:%s\tERRORS: %d\tTIMEOUTS: %d]" % \
+                      (ip, p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
+                       info.total_timeouts)
+
             if self.msg_queue.len == 0 and not run_loop:
                 loop = False
 
@@ -209,13 +230,15 @@ if __name__ == "__main__":
 
     threads = []
 
-    randomSeqNr = random.sample(range(1, 0x7FFF), sys.argv[1:].__len__())
+    randomSeqNr = random.sample(range(1, 0x7FFF), len(sys.argv[1:]))
+    valid_ips = []
 
     for ip in sys.argv[1:]:
         if is_valid_ipv4_address(ip):
             threads.append(Runner(ip, msg_queue, randomSeqNr.pop()))
+            valid_ips.append(ip)
 
-    threads.append(Printing(msg_queue))
+    threads.append(Printing(msg_queue, valid_ips))
 
     for thread in threads:
         thread.start()
