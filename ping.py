@@ -167,6 +167,7 @@ class Printing(threading.Thread):
         threading.Thread.__init__(self)
         self.msg_queue = msg_queue
         self.data = {}
+        self.valid_ips = valid_ips
         self.start_from = default_timer()
         for ip in valid_ips:
             self.data[ip] = SummaryData()
@@ -193,7 +194,8 @@ class Printing(threading.Thread):
                 strftime("%m-%d %H:%M:%S"), strftime("%m-%d %H:%M:%S", time.gmtime(self.start_from)),
                 d_hours, d_mins, delta
             )
-            for ip, info in self.data.iteritems():
+            for ip in self.valid_ips:
+                info = self.data[ip]
                 print "[%s]\tDELAY:%s\tERRORS: %d\tTIMEOUTS: %d]" % \
                       (ip, p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
                        info.total_timeouts)
