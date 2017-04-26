@@ -196,9 +196,10 @@ class Printing(threading.Thread):
             )
             for ip in self.valid_ips:
                 info = self.data[ip]
-                print "[%s]\tDELAY:%s\tERRORS: %d\tTIMEOUTS: %d]" % \
+                print "[%s]\tDELAY:%s\tERRORS: %d\tTIMEOUTS: %d]%s>" % \
                       (ip, p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
-                       info.total_timeouts)
+                       info.total_timeouts,
+                       ("-" * (info.ok_counter%10) ) )
 
             if self.msg_queue.len == 0 and not run_loop:
                 loop = False

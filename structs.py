@@ -27,6 +27,7 @@ class SummaryData:
         self.total_errors = 0
         self.total_timeouts = 0
         self.highest_delay = 0
+        self.ok_counter = 0
 
     def update(self, iptracking):
         if isinstance(iptracking, IPTracking):
@@ -36,6 +37,7 @@ class SummaryData:
             elif iptracking.timeout:
                 self.total_timeouts += 1
             else:
+                self.ok_counter += 1
                 self.curr_delay = iptracking.ping
                 self.total_delay += iptracking.ping
                 self.amount_updates += 1
