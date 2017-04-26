@@ -51,6 +51,10 @@ class SummaryData:
             return 0.0
 
 
+class ControlCommand:
+    def __init__(self, cmd_val):
+        self.command = cmd_val
+
 class MessageQueue:
     def __init__(self):
         self.queue = []

@@ -10,11 +10,17 @@ import signal
 import threading
 from time import sleep, strftime
 import os
-from structs import IPTracking, SummaryData, MessageQueue
+from structs import IPTracking, SummaryData, ControlCommand, MessageQueue
 
 default_timer = time.time
 
+last_ctrl_c_time_sec = 0
+
 ICMP_ECHO_REQUEST = 8
+
+
+CTRL_CMD_NONE = 0
+CTRL_CMD_CLEAR_OK_COUNTER = 1
 
 run_loop = True
 
@@ -181,6 +187,9 @@ class Printing(threading.Thread):
                 item = self.msg_queue.pop()
                 if item is not None and isinstance(item, IPTracking):
                     self.data[item.ip].update(item)
+                elif item is not None and isinstance(item, ControlCommand):
+                    for ip,info in self.data.iteritems():
+                        info.ok_counter = info.total_errors = info.total_timeouts = 0
                 del item
 
             os.system("clear")
@@ -206,6 +215,14 @@ class Printing(threading.Thread):
 
 
 def exit_method(signal, frame):
+    global last_ctrl_c_time_sec
+    cur_time_sec = time.time()
+    last_ctrl_c_time_sec_bak = last_ctrl_c_time_sec
+    last_ctrl_c_time_sec = cur_time_sec
+    if cur_time_sec - last_ctrl_c_time_sec_bak > 1:
+        msg_queue.push( ControlCommand(CTRL_CMD_CLEAR_OK_COUNTER) )
+        return
+
     global run_loop
     run_loop = False
     print("STOPPING")
@@ -227,7 +244,8 @@ def is_valid_ipv4_address(address):
 
 
 if __name__ == "__main__":
-
+    global msg_queue
+    
     signal.signal(signal.SIGTERM, exit_method)
     signal.signal(signal.SIGINT, exit_method)
 
