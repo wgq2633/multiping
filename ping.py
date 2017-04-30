@@ -181,7 +181,10 @@ class Printing(threading.Thread):
     def run(self):
         global run_loop
         loop = True
+        
+        print("\033[2J")
         while loop:
+            stdout_linenum=2
             sleep(1)
             while self.msg_queue.len > 0:
                 item = self.msg_queue.pop()
@@ -192,20 +195,23 @@ class Printing(threading.Thread):
                         info.ok_counter = info.total_errors = info.total_timeouts = 0
                 del item
 
-            os.system("clear")
             delta = default_timer() - self.start_from
             d_hours = int(delta / 3600)
             delta -= d_hours * 3600
             d_mins = int(delta / 60)
             delta -= d_mins * 60
 
+            print "\033[%d;0H\033[K" % stdout_linenum,
+            stdout_linenum+=1
             print "Current time: %s\t\tRunning from: %s\t\tRunning time: %02d:%02d:%02d" % (
                 strftime("%m-%d %H:%M:%S"), strftime("%m-%d %H:%M:%S", time.gmtime(self.start_from)),
                 d_hours, d_mins, delta
             )
             for ip in self.valid_ips:
                 info = self.data[ip]
-                print "[%s]\tDELAY:%s\tERRORS: %d\tTIMEOUTS: %d]%s>" % \
+                print "\033[%d;0H\033[K" % stdout_linenum,
+                stdout_linenum+=1
+                print "[%-15s]\tDELAY:%s\tERRORS: %d\tTIMEOUTS: %d]%s>" % \
                       (ip, p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
                        info.total_timeouts,
                        ("-" * (info.ok_counter%10) ) )
@@ -217,6 +223,7 @@ class Printing(threading.Thread):
 def exit_method(signal, frame):
     global last_ctrl_c_time_sec
     cur_time_sec = time.time()
+    print "\033[2J\033[0;20H\033[K %d" % cur_time_sec
     last_ctrl_c_time_sec_bak = last_ctrl_c_time_sec
     last_ctrl_c_time_sec = cur_time_sec
     if cur_time_sec - last_ctrl_c_time_sec_bak > 1:
