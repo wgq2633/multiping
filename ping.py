@@ -11,6 +11,7 @@ import threading
 from time import sleep, strftime
 import os
 from structs import IPTracking, SummaryData, ControlCommand, MessageQueue
+import re
 
 default_timer = time.time
 
@@ -193,6 +194,7 @@ class Printing(threading.Thread):
                 elif item is not None and isinstance(item, ControlCommand):
                     for ip,info in self.data.iteritems():
                         info.ok_counter = info.total_errors = info.total_timeouts = 0
+                        info.highest_delay = info.total_delay = 0
                 del item
 
             delta = default_timer() - self.start_from
@@ -223,7 +225,7 @@ class Printing(threading.Thread):
 def exit_method(signal, frame):
     global last_ctrl_c_time_sec
     cur_time_sec = time.time()
-    print "\033[2J\033[0;20H\033[K %d" % cur_time_sec
+    print "\033[2J\033[0;15H\033[K %s" % strftime("%m-%d %H:%M:%S")
     last_ctrl_c_time_sec_bak = last_ctrl_c_time_sec
     last_ctrl_c_time_sec = cur_time_sec
     if cur_time_sec - last_ctrl_c_time_sec_bak > 1:
@@ -249,6 +251,47 @@ def is_valid_ipv4_address(address):
 
     return True
 
+# parsing num pattern
+def parse_num_segements(numsegment_rex_match):
+    ipsegs=numsegment_rex_match.group(1).split(",")
+    num_segs=[]
+    for ipseg in ipsegs:
+        ipseglst=ipseg.split("-")
+        ipsegstart=ipseglst[0]
+        ipseglast=ipseglst[-1]
+        
+        rex_digit=re.compile("^-?\d+$")
+        rex_match=rex_digit.search(ipsegstart)
+        if rex_match is None:
+            print("invalid ip segement start %s" % ipseg)
+            continue;
+        ipsegstart=int(ipsegstart);
+        
+        rex_match=rex_digit.search(ipseglast)
+        if rex_match is not None:
+            ipseglast=int(ipseglast);
+        else:
+            ipseglast=-1
+        
+        ipsegstep=0
+        if len(ipseglst)>=3:
+            ipsegstep=ipseglst[1]
+            rex_match=rex_digit.search(ipsegstep)
+            if rex_match is not None:
+                ipsegstep=int(ipsegstep);
+        if ipsegstart<1 or ipsegstart>254: ipsegstart=1
+        if ipsegstep==0:
+            if ipseglast<ipsegstart: ipsegstep=-1
+            else: ipsegstep=1
+        if ipseglast<1 or ipseglast>254:
+            if ipsegstep>0: ipseglast=254
+            else: ipseglast=1
+           
+        print("[%d,%d]%d" %(ipsegstart, ipseglast, ipsegstep) )
+        num_segs.extend( range(ipsegstart, ipseglast+ipsegstep, ipsegstep) )
+        
+    return (None if len(num_segs)<1 else num_segs)
+    
 
 if __name__ == "__main__":
     global msg_queue
@@ -259,15 +302,30 @@ if __name__ == "__main__":
     msg_queue = MessageQueue()
 
     threads = []
-
-    randomSeqNr = random.sample(range(1, 0x7FFF), len(sys.argv[1:]))
     valid_ips = []
 
     for ip in sys.argv[1:]:
         if is_valid_ipv4_address(ip):
-            threads.append(Runner(ip, msg_queue, randomSeqNr.pop()))
+            threads.append(Runner(ip, msg_queue, random.randint(1,0x7FFF) ))
             valid_ips.append(ip)
-
+            print "ipistr=%s" % ip
+        else:
+            ipsegment_rex_match=re.compile("\{([,\-0-9]+)\}").search(ip)
+            if ipsegment_rex_match is not None:
+                ipprefix=ip[0:ipsegment_rex_match.start()]
+                ipsuffix=""
+                endpos=ipsegment_rex_match.end()
+                if endpos< len(ip): ipsuffix=ip[endpos:]
+                
+                ipseglst=parse_num_segements(ipsegment_rex_match)
+                for ipi in ipseglst:
+                    ipistr=("%s%d%s" %(ipprefix, ipi, ipsuffix) )
+                    #print "ipistr=%s" % ipistr
+                    if is_valid_ipv4_address(ipistr): 
+                        print "ipistr=%s" % ipistr
+                        threads.append(Runner(ipistr, msg_queue, random.randint(1,0x7FFF)))
+                        valid_ips.append(ipistr)
+    #exit(1)
     threads.append(Printing(msg_queue, valid_ips))
 
     for thread in threads:
