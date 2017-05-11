@@ -166,7 +166,7 @@ def p_helper1(curr, max, avg, size=20):
         point = size
 
     return u"[%s%s| %s ms AVG: %s ms MAX: %s ms]" % (
-        '#' * point, '.' * (size - point), p_helper(curr), p_helper(avg), p_helper(max))
+        '.' * point, ' ' * (size - point), p_helper(curr), p_helper(avg), p_helper(max))
 
 
 class Printing(threading.Thread):
@@ -217,10 +217,11 @@ class Printing(threading.Thread):
                 ipid=ipid+1
                 print "%s\033[%d;0H\033[K" % (style,stdout_linenum),
                 stdout_linenum+=1
-                print "[%-15s]\tDELAY:%s\tERRORS: %d\tTIMEOUTS: %d]%s>\033[0m" % \
-                      (ip, p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
-                       info.total_timeouts,
-                       ("-" * (info.ok_counter%10) ) )
+                print "%-15s %-10s DELAY:%s\tERRORS: %d\tTIMEOUTS: %d]\033[0m" % \
+                      (ip, 
+                      ("=" * (info.ok_counter%10) + ">" ),
+                      p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
+                       info.total_timeouts )
 
             if self.msg_queue.len == 0 and not run_loop:
                 loop = False
