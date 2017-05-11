@@ -209,11 +209,15 @@ class Printing(threading.Thread):
                 strftime("%m-%d %H:%M:%S"), strftime("%m-%d %H:%M:%S", time.localtime(self.start_from)),
                 d_hours, d_mins, delta
             )
+            
+            ipid=0
             for ip in self.valid_ips:
                 info = self.data[ip]
-                print "\033[%d;0H\033[K" % stdout_linenum,
+                style=("\033[33m" if ipid%2==0 else "\033[35m")
+                ipid=ipid+1
+                print "%s\033[%d;0H\033[K" % (style,stdout_linenum),
                 stdout_linenum+=1
-                print "[%-15s]\tDELAY:%s\tERRORS: %d\tTIMEOUTS: %d]%s>" % \
+                print "[%-15s]\tDELAY:%s\tERRORS: %d\tTIMEOUTS: %d]%s>\033[0m" % \
                       (ip, p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
                        info.total_timeouts,
                        ("-" * (info.ok_counter%10) ) )
