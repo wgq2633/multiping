@@ -195,6 +195,7 @@ class Printing(threading.Thread):
                     for ip,info in self.data.iteritems():
                         info.ok_counter = info.total_errors = info.total_timeouts = 0
                         info.highest_delay = info.total_delay = 0
+                        info.amount_updates = 0
                 del item
 
             delta = default_timer() - self.start_from
