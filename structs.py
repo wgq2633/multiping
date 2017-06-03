@@ -20,7 +20,8 @@ class IPTracking:
 
 
 class SummaryData:
-    def __init__(self):
+    def __init__(self, hostname):
+        self.hostname = hostname
         self.curr_delay = 0.0
         self.total_delay = 0.0
         self.amount_updates = 0

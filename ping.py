@@ -177,7 +177,8 @@ class Printing(threading.Thread):
         self.valid_ips = valid_ips
         self.start_from = default_timer()
         for ip in valid_ips:
-            self.data[ip] = SummaryData()
+            hostname=( ip2hostname_map[ip] if (ip in ip2hostname_map)  else ip )
+            self.data[ip] = SummaryData(hostname)
 
     def run(self):
         global run_loop
@@ -219,8 +220,8 @@ class Printing(threading.Thread):
                 print "%s\033[%d;0H\033[K" % (style,stdout_linenum),
                 stdout_linenum+=1
                 tmp_amount_updates=(info.amount_updates if info.amount_updates>0 else 1)
-                print "%-15s %-10s DELAY:%s\tERRORS: %d\tTIMEOUTS: %d/%-3.2f%%]\033[0m" % \
-                      (ip, 
+                print "%-25s %-10s DELAY:%s\tERRORS: %d\tTIMEOUTS: %d/%-3.2f%%]\033[0m" % \
+                      (info.hostname, 
                       ("=" * (info.ok_counter%10) + ">" ),
                       p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
                        info.total_timeouts, 100.0*info.total_timeouts/tmp_amount_updates )
@@ -310,6 +311,8 @@ if __name__ == "__main__":
 
     threads = []
     valid_ips = []
+    ip2hostname_map = {}
+    
 
     for ip in sys.argv[1:]:
         if is_valid_ipv4_address(ip):
@@ -318,7 +321,14 @@ if __name__ == "__main__":
             print "ipistr=%s" % ip
         else:
             ipsegment_rex_match=re.compile("\{([,\-0-9]+)\}").search(ip)
-            if ipsegment_rex_match is not None:
+            if ipsegment_rex_match is None:
+                hostname=ip;
+                ipistr=socket.gethostbyname(hostname)
+                print("host:%s => %s" %(hostname, ipistr) )
+                ip2hostname_map[ipistr] = hostname
+                threads.append(Runner(ipistr, msg_queue, random.randint(1,0x7FFF)))
+                valid_ips.append(ipistr)
+            else:
                 ipprefix=ip[0:ipsegment_rex_match.start()]
                 ipsuffix=""
                 endpos=ipsegment_rex_match.end()
