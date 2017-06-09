@@ -326,7 +326,11 @@ if __name__ == "__main__":
             ipsegment_rex_match=re.compile("\{([,\-0-9]+)\}").search(ip)
             if ipsegment_rex_match is None:
                 hostname=ip;
-                ipistr=socket.gethostbyname(hostname)
+                try:
+                    ipistr=socket.gethostbyname(hostname)
+                except socket.gaierror:
+                    print("error parsing ip for '%s'" % hostname);
+                    continue
                 print("host:%s => %s" %(hostname, ipistr) )
                 ip2hostname_map[ipistr] = hostname
                 threads.append(Runner(ipistr, msg_queue, random.randint(1,0x7FFF)))
