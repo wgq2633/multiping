@@ -46,7 +46,10 @@ class Runner(threading.Thread):
                     delay *= 1000
                     data.set_delay(delay)
             except socket.error as e:
-                data.set_error(e[0], e[1])
+                error_code, error_msg = \
+                    (e.errno, e.message) if hasattr(e, "errno") \
+                    else (e[0], e[1])
+                data.set_error(error_code, error_msg)
 
             self.msg_queue.push(data)
             self.seq = (self.seq + 1) & 0xFFFF
