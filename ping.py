@@ -47,7 +47,7 @@ class Runner(threading.Thread):
                     data.set_delay(delay)
             except socket.error as e:
                 error_code, error_msg = \
-                    (e.errno, e.message) if hasattr(e, "errno") \
+                    (1000, e.message) if hasattr(e, "errno") \
                     else (e[0], e[1])
                 data.set_error(error_code, error_msg)
 
