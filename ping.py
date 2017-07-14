@@ -226,11 +226,17 @@ class Printing(threading.Thread):
                 timeout_rate=100.0
                 if info.amount_updates>0:
                     timeout_rate=100.0*info.total_timeouts/info.amount_updates
-                print "%-25s %-10s DELAY:%s\tERRORS: %d\tTIMEOUTS: %d/%-3.2f%%]\033[0m" % \
-                      (info.hostname, 
-                      ("=" * (info.ok_counter%10) + ">" ),
-                      p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
-                       info.total_timeouts, timeout_rate)
+                str_msg= "%-25s " % info.hostname
+                if len(info.error_msg) > 0:
+                    str_msg += "ERRORS: %d\t" % info.total_errors
+                    str_msg += info.error_msg
+                else:
+                    str_msg+= "%-10s DELAY:%s\tERRORS: %d\tTIMEOUTS: %d/%-3.2f%%]\033[0m" % \
+                          (
+                          ("=" * (info.ok_counter%10) + ">" ),
+                          p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
+                           info.total_timeouts, timeout_rate)
+                print(str_msg)
 
             if self.msg_queue.len == 0 and not run_loop:
                 loop = False

@@ -26,15 +26,17 @@ class SummaryData:
         self.total_delay = 0.0
         self.amount_updates = 0
         self.total_errors = 0
+        self.error_msg = ""
         self.total_timeouts = 0
         self.highest_delay = 0
         self.ok_counter = 0
 
     def update(self, iptracking):
         if isinstance(iptracking, IPTracking):
-
+            self.error_msg = ""
             if iptracking.error_code > 0:
                 self.total_errors += 1
+                self.error_msg = "(E#%d,%s)" %( iptracking.error_code, iptracking.error_msg )
             elif iptracking.timeout:
                 self.total_timeouts += 1
             else:
