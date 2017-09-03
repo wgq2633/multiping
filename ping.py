@@ -24,6 +24,7 @@ CTRL_CMD_NONE = 0
 CTRL_CMD_CLEAR_OK_COUNTER = 1
 
 run_loop = True
+less_info = False
 
 
 class Runner(threading.Thread):
@@ -196,7 +197,10 @@ class Printing(threading.Thread):
             return (ip_formatter % ip)
         
         loop = True
-        result_line_formater="%(ok_marker)-10s [%(delay_marker)-15s %(delay_cur)11s %(delay_avg)11s %(delay_max)11s] %(err_cnt)6s %(timeout_cnt)6s/%(timeout_rate)-6s"
+        if less_info:
+            result_line_formater="%(ok_marker)-10s [%(delay_marker)-15s %(delay_cur)11s] %(err_cnt)6s %(timeout_cnt)6s/%(timeout_rate)-6s"
+        else:
+            result_line_formater="%(ok_marker)-10s [%(delay_marker)-15s %(delay_cur)11s %(delay_avg)11s %(delay_max)11s] %(err_cnt)6s %(timeout_cnt)6s/%(timeout_rate)-6s"
         
         print("\033[2J")
         while loop:
@@ -351,6 +355,7 @@ def parse_num_segements(numsegment_rex_match):
 
 if __name__ == "__main__":
     global msg_queue
+    global less_info
     
     signal.signal(signal.SIGTERM, exit_method)
     signal.signal(signal.SIGINT, exit_method)
@@ -363,6 +368,9 @@ if __name__ == "__main__":
     
 
     for ip in sys.argv[1:]:
+        if (ip=="-L") or (ip=="--less-info"):
+            less_info=True; continue; 
+    
         if is_valid_ipv4_address(ip):
             threads.append(Runner(ip, msg_queue, random.randint(1,0x7FFF) ))
             valid_ips.append(ip)
