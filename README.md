@@ -4,11 +4,13 @@ Multiping is a small application which works very similar to PING, but the main 
 **Example of usage**
 ```sh
 $ python ping.py [options] <ip-address|hostname> <ip-address-range> ...
-    ip-address|hostname:    any ip address or hostname
-    ip-address-range:       ip address ranges can be: 192.168.{1-5}.7 or '192.168.{1-2-5}.7'
-                            you'd better quote your ip-address-range arguments with apostrophe sign('), to avoid it to be expanded by SHELL.
-                            '192.168.{1-5}.7' : the 3rd part is in interger set [1,5], i.e.{ 192.168.1.7 192.168.2.7 192.168.3.7 .... 192.168.5.7 }
-                            '192.168.1.{1-2-5}':the 4th part is in interger set [1,5] but with stepper of 2, i.e. { 192.168.1.1 192.168.1.3 192.168.1.5}
+    ip-address|hostname:
+            any ip address or hostname
+    ip-address-range:
+            ip address ranges can be: 192.168.{1-5}.7 or '192.168.{1-2-5}.7'
+            you'd better quote your ip-address-range arguments with apostrophe sign('), to avoid it to be expanded by SHELL.
+            '192.168.{1-5}.7' : the 3rd part is in interger set [1,5], i.e.{ 192.168.1.7 192.168.2.7 192.168.3.7 .... 192.168.5.7 }
+            '192.168.1.{1-2-5}':the 4th part is in interger set [1,5] but with stepper of 2, i.e. { 192.168.1.1 192.168.1.3 192.168.1.5}
     options:
             -L,--less-info  don't show AVG&MAX DELAY value.
 ```
