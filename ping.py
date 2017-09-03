@@ -185,6 +185,15 @@ class Printing(threading.Thread):
 
     def run(self):
         global run_loop
+        
+        def max_str_len(cur_max_len, s):
+            this_len = len(s)
+            return this_len if this_len>cur_max_len else cur_max_len
+        max_ip_len = reduce(max_str_len, self.valid_ips, 0)
+        ip_formatter = ("%%-%ds " % max_ip_len)
+        def f_ip_formatter(ip):
+            return (ip_formatter % ip)
+        
         loop = True
         
         print("\033[2J")
@@ -226,7 +235,7 @@ class Printing(threading.Thread):
                 timeout_rate=100.0
                 if info.amount_updates>0:
                     timeout_rate=100.0*info.total_timeouts/info.amount_updates
-                str_msg= "%-25s " % info.hostname
+                str_msg= f_ip_formatter(info.hostname)
                 if len(info.error_msg) > 0:
                     str_msg += "ERRORS: %d\t" % info.total_errors
                     str_msg += info.error_msg
