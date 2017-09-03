@@ -3,14 +3,24 @@ Multiping is a small application which works very similar to PING, but the main 
 
 **Example of usage**
 ```sh
-$ python ping.py <ip-address> <ip-address> ...
+$ python ping.py [options] <ip-address|hostname> <ip-address-range> ...
+    ip-address|hostname:    any ip address or hostname
+    ip-address-range:       ip address ranges can be:  or '192.168.{1-2-5}.7'
+                            '192.168.{1-5}.7' : the 3rd part is in interger set [1,5], i.e.{ 192.168.1.7 192.168.2.7 192.168.3.7 .... 192.168.5.7 }
+                            '192.168.1.{1-2-5}':the 4th part is in interger set [1,5] but with stepper of 2, i.e. { 192.168.1.1 192.168.1.3 192.168.1.5}
+    options:
+            -L,--less-info  don't show AVG&MAX DELAY value.
 ```
 
 **Example output**
 ```
-Current time: 10-14 08:50:00		Running from: 10-14 08:00:00		Running time: 00:50:00
-[192.168.1.1]	DELAY:[#####...............|    1.8299 ms AVG:    3.2295 ms MAX:   77.9240 ms]	ERRORS: 0	TIMEOUTS: 191]
-[8.8.8.8]	DELAY:[##..................|    6.6450 ms AVG:   20.7637 ms MAX:  251.2622 ms]	ERRORS: 0	TIMEOUTS: 28]
-[192.168.5.5]	DELAY:[#########...........|    1.6210 ms AVG:    2.2818 ms MAX:  105.5570 ms]	ERRORS: 0	TIMEOUTS: 0]
-[192.168.5.25]	DELAY:[....................|    1.6658 ms AVG:    2.1498 ms MAX:   80.8280 ms]	ERRORS: 0	TIMEOUTS: 0]
+               09-03 20:06:38
+ Current time:09-03 20:06:44     Running from: 09-03 20:06:23    Running time: 00:00:21
+HOST            =====      [DELAY/ms                CUR         AVG         MAX] ERRORS TIMEOUTS/%
+lo              =======>   [.....                0.3488      0.4531      0.9899]      0      0/0.00
+192.168.168.168 >          [                     0.0000      0.0000      0.0000]      0      1/100.00
+192.168.0.1     =======>   [.............        1.6241      1.4154      1.7920]      0      0/0.00
+as2             =====>     [..............     127.0440    127.3017    127.5311]      0      0/0.00
+m.baidu.com     ======>    [..............      23.3269     23.4005     24.1599]      0      0/0.00
+github.com      >          [                   245.4059      0.0000      0.0000]      0      1/100.00
 ```
