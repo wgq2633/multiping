@@ -159,8 +159,10 @@ def p_helper(value, length=9):
     l = "%.4f" % value
     return " " * (length - len(l)) + l
 
+def perentage_formater(rate):
+    return "%3.2f" % rate;
 
-def p_helper1(curr, max, avg, size=20):
+def delay_marker(curr, max, avg, size=15):
     if max < 0.1:
         point = 0
     else:
@@ -168,8 +170,7 @@ def p_helper1(curr, max, avg, size=20):
     if point > size:
         point = size
 
-    return u"[%s%s| %s ms AVG: %s ms MAX: %s ms]" % (
-        '.' * point, ' ' * (size - point), p_helper(curr), p_helper(avg), p_helper(max))
+    return '.' * point
 
 
 class Printing(threading.Thread):
@@ -195,6 +196,7 @@ class Printing(threading.Thread):
             return (ip_formatter % ip)
         
         loop = True
+        result_line_formater="%(ok_marker)-10s [%(delay_marker)-15s %(delay_cur)11s %(delay_avg)11s %(delay_max)11s] %(err_cnt)6s %(timeout_cnt)6s/%(timeout_rate)-6s"
         
         print("\033[2J")
         while loop:
@@ -225,26 +227,51 @@ class Printing(threading.Thread):
             )
             
             ipid=0
+            
+            #title line
+            stdout_linenum+=1
+            str_msg= f_ip_formatter("HOST")
+            str_msg+= result_line_formater % \
+                {
+                    "ok_marker":   "=" * 5,
+                    "delay_marker": "DELAY/ms",
+                    "delay_cur":   "CUR",
+                    "delay_avg":   "AVG",
+                    "delay_max":   "MAX",
+                    "err_cnt":     "ERRORS",
+                    "timeout_cnt": "TIMEOUTS",
+                    "timeout_rate": "%"
+                }
+            print(str_msg)
+            
             for ip in self.valid_ips:
                 info = self.data[ip]
                 style=("\033[33m" if ipid%2==0 else "\033[35m")
                 ipid=ipid+1
-                print "%s\033[%d;0H\033[K" % (style,stdout_linenum),
+                str_msg = "%s\033[%d;0H\033[K" % (style,stdout_linenum)
                 stdout_linenum+=1
                 
                 timeout_rate=100.0
                 if info.amount_updates>0:
                     timeout_rate=100.0*info.total_timeouts/info.amount_updates
-                str_msg= f_ip_formatter(info.hostname)
+                str_msg += f_ip_formatter(info.hostname)
                 if len(info.error_msg) > 0:
                     str_msg += "ERRORS: %d\t" % info.total_errors
                     str_msg += info.error_msg
                 else:
-                    str_msg+= "%-10s DELAY:%s\tERRORS: %d\tTIMEOUTS: %d/%-3.2f%%]\033[0m" % \
-                          (
-                          ("=" * (info.ok_counter%10) + ">" ),
-                          p_helper1(info.curr_delay, info.highest_delay, info.calc_avg_delay()), info.total_errors,
-                           info.total_timeouts, timeout_rate)
+                    delay_avg = info.calc_avg_delay();
+                    str_msg+= result_line_formater % \
+                        {
+                            "ok_marker":   "=" * (info.ok_counter%10) + ">",
+                            "delay_marker":      delay_marker(info.curr_delay, info.highest_delay, delay_avg),
+                            "delay_cur":   p_helper(info.curr_delay),
+                            "delay_avg":   p_helper(delay_avg),
+                            "delay_max":   p_helper(info.highest_delay),
+                            "err_cnt":     info.total_errors,
+                            "timeout_cnt": info.total_timeouts,
+                            "timeout_rate":perentage_formater(timeout_rate)
+                        }
+                str_msg += "\033[0m"
                 print(str_msg)
 
             if self.msg_queue.len == 0 and not run_loop:
