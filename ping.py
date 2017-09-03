@@ -221,7 +221,7 @@ class Printing(threading.Thread):
 
             print "\033[%d;0H\033[K" % stdout_linenum,
             stdout_linenum+=1
-            print "Current time: %s\t\tRunning from: %s\t\tRunning time: %02d:%02d:%02d" % (
+            print "Current time:%s\t Running from: %s\t Running time: %02d:%02d:%02d" % (
                 strftime("%m-%d %H:%M:%S"), strftime("%m-%d %H:%M:%S", time.localtime(self.start_from)),
                 d_hours, d_mins, delta
             )
